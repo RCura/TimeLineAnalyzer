@@ -47,6 +47,15 @@
                 <h4>Hour <small><a id="hour">reset</a></small></h4>
                 <div class="dc-chart" id="chart-ring-hour"></div>
               </div>
+              <div class = "col-md-6 pie-chart">
+                <h4>Week <small><a id="week">reset</a></small></h4>
+                <div class="dc-chart" id="chart-week-count"></div>
+              </div>
+
+              <div class = "col-md-6 pie-chart">
+               <h4>Importance <small><a id="importance">reset</a></small></h4>
+              <div class="dc-chart" id="chart-importance-count"></div>
+              </div>
 
             </div>
         </div>
@@ -114,6 +123,7 @@ d3.json('allPoints.geojson', function (error, data) {
   var yearFormat = d3.time.format('%Y');
   var monthFormat = d3.time.format('%b');
   var dayOfWeekFormat = d3.time.format('%a');
+  var weekFormat = d3.time.format('%W');
   var hourFormat = d3.time.format('%H');
 
   // normalize/parse data so dc can correctly sort & bin them
@@ -127,6 +137,7 @@ d3.json('allPoints.geojson', function (error, data) {
     d.debut_year= +yearFormat(d.debut);
     d.debut_month = monthFormat(d.debut);
     d.debut_day = dayOfWeekFormat(d.debut);
+    d.debut_week = weekFormat(d.debut);
     d.debut_hour = hourFormat(d.debut);
   });
 
@@ -137,6 +148,7 @@ d3.json('allPoints.geojson', function (error, data) {
   var yearDim  = ndx.dimension(function(d) {return d.debut_year;}),
       monthDim  = ndx.dimension(dc.pluck('debut_month')),
       dayOfWeekDim = ndx.dimension(dc.pluck('debut_day')),
+      weekDim = ndx.dimension(dc.pluck('debut_week')),
       hourDim = ndx.dimension(dc.pluck('debut_hour')),
       importanceDim = ndx.dimension(dc.pluck('importance')),
       allDim = ndx.dimension(function(d) {return d.properties;});
@@ -146,6 +158,7 @@ d3.json('allPoints.geojson', function (error, data) {
   var countPerYear = yearDim.group().reduceCount(),
       countPerMonth = monthDim.group().reduceCount(),
       countPerDay = dayOfWeekDim.group().reduceCount(),
+      countPerWeek =  weekDim.group().reduceCount(),
       countPerHour = hourDim.group().reduceCount(),
       countPerImportance = importanceDim.group().reduceCount();
 
@@ -153,6 +166,7 @@ d3.json('allPoints.geojson', function (error, data) {
   var yearChart   = dc.pieChart('#chart-ring-year'),
       monthChart   = dc.pieChart('#chart-ring-month'),
       dayChart   = dc.pieChart('#chart-ring-day'),
+      weekChart = dc.barChart('#chart-week-count'),
       hourChart = dc.pieChart('#chart-ring-hour'),
       importanceCountChart  = dc.barChart('#chart-importance-count'),
       dataCount = dc.dataCount('#data-count')
@@ -195,6 +209,18 @@ d3.json('allPoints.geojson', function (error, data) {
       }
      );
 
+  weekChart
+       .width(250)
+      .height(180)
+      .dimension(weekDim)
+      .group(countPerWeek)
+      .x(d3.scale.linear().domain([0,53]))
+      .elasticY(true)
+      .centerBar(true)
+      .barPadding(0)
+      .xAxisLabel('Week')
+      .margins({top: 10, right: 20, bottom: 50, left: 50});
+
   hourChart
       .width(150)
       .height(150)
@@ -203,7 +229,7 @@ d3.json('allPoints.geojson', function (error, data) {
       .innerRadius(20);
 
   importanceCountChart
-      .width(300)
+      .width(250)
       .height(180)
       .dimension(importanceDim)
       .group(countPerImportance)
@@ -212,7 +238,6 @@ d3.json('allPoints.geojson', function (error, data) {
       .centerBar(true)
       .barPadding(0)
       .xAxisLabel('Importance') //zefzef
-      .yAxisLabel('Count') //zefzefzef
       .margins({top: 10, right: 20, bottom: 50, left: 50});
     importanceCountChart.xUnits(function(){return 10;});
 
