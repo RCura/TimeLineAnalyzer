@@ -84,14 +84,18 @@
 <script type="text/javascript" src="js/underscore-min.js"></script>
 <script type="text/javascript" src="js/leaflet.markercluster.js"></script>
 <script type="text/javascript" src="js/leaflet.markercluster-src.js"></script>
+<script type="text/javascript" src="js/leaflet-heat.js"></script>
 
 <script type="text/javascript">
 
 /* instantiate and configure map */
 var map = L.map('map');
 var pathMarkers = new L.markerClusterGroup();
-// Sinon
 // var pathMarkers = new L.featureGroup();
+//var pathMarkers = new L.heatLayer();
+var heatMarkers = new L.heatLayer();
+// Sinon
+
 
 L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
   id: 'austinlyons.mp2nb11m',
@@ -115,7 +119,7 @@ d3.json('allPoints.geojson', function (error, data) {
     d.count = +d.count;
     d.ID = d.properties.ID
     d.altitude = Math.round(+d.properties.Alt);
-    d.importance = +d.properties.Importance
+    d.importance = Math.floor(+d.properties.Importance / 10) * 10;
     d.debut = fullDateFormat.parse(d.properties.Time);
     d.debut_year= +yearFormat(d.debut);
     d.debut_month = monthFormat(d.debut);
@@ -200,13 +204,14 @@ d3.json('allPoints.geojson', function (error, data) {
       .height(180)
       .dimension(importanceDim)
       .group(countPerImportance)
-      .x(d3.scale.linear().domain([0,d3.max(pathData, function (d) { return d.properties.Importance; })]))
+      .x(d3.scale.linear().domain([0,100]))
       .elasticY(true)
       .centerBar(true)
-      .barPadding(5)
+      .barPadding(0)
       .xAxisLabel('Importance') //zefzef
       .yAxisLabel('Count') //zefzefzef
       .margins({top: 10, right: 20, bottom: 50, left: 50});
+    importanceCountChart.xUnits(function(){return 10;});
 
   dataCount
       .dimension(ndx)
@@ -229,13 +234,18 @@ d3.json('allPoints.geojson', function (error, data) {
       table.select('tr.dc-table-group').remove();
 
       // update map with breweries to match filtered data
+      var myPoints = [];
       pathMarkers.clearLayers();
       _.each(allDim.top(Infinity), function (d) {
         var loc = d.geometry.coordinates;
         var marker = L.circle([loc[1], loc[0]], 100);
         pathMarkers.addLayer(marker);
+        myPoints.push([loc[1], loc[0]]);
       });
-      map.addLayer(pathMarkers);
+      var heat = L.heatLayer(myPoints).addTo(map);
+      //map.addLayer(pathMarkers);
+
+
       map.fitBounds(pathMarkers.getBounds());
     });
 
