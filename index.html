@@ -8,12 +8,14 @@
     <link rel="stylesheet" type="text/css" href="css/leaflet.css">
     <link rel="stylesheet" type="text/css" href="css/bootstrap.css">
     <link rel="stylesheet" type="text/css" href="css/main.css">
+    <link rel="stylesheet" type="text/css" href="css/MarkerCluster.css">
+    <link rel="stylesheet" type="text/css" href="css/MarkerCluster.Default.css">
 </head>
 <body>
 <div class="container-fluid">
-  <div class="row">
+    <div class="row">
     <div class="col-xs-12 dc-data-count dc-chart" id="data-count">
-      <h2>Beer History
+      <h2>Some moves
         <small>
           <span class="filter-count"></span> selected out of <span class="total-count"></span> records |
            <a id="all" href="#">Reset All</a>
@@ -22,53 +24,51 @@
       </h2>
     </div>
   </div>
-  <div class="row" id="control-row">
-    <div class="col-xs-2 pie-chart">
-      <h4>Year <small><a id="year">reset</a></small></h4>
-      <div class="dc-chart" id="chart-ring-year"></div>
+  <div class = "row">
+    <div class = "col-md-6" id = "control-row">
+      <div class = "row">
+         <div class = "col-md-6 pie-chart">
+            <h4>Year <small><a id="year">reset</a></small></h4>
+            <div class="dc-chart" id="chart-ring-year"></div>
+         </div>
+          <div class = "col-md-6 pie-chart">
+            <h4>Year <small><a id="month">reset</a></small></h4>
+            <div class="dc-chart" id="chart-month-year"></div>
+         </div>
+      </div>    
+
+
+
+        <div class="row pie-chart"><h4>Day <small><a id="day">reset</a></small></h4><div class="dc-chart" id="chart-ring-day"></div></div>
+        <div class="row pie-chart"><h4>Hour <small><a id="hour">reset</a></small></h4><div class="dc-chart" id="chart-ring-hour"></div></div>
     </div>
-    <div class="col-xs-2 pie-chart">
-      <h4>Month <small><a id="month" href="#">reset</a></small></h4>
-      <div class="dc-chart" id="chart-ring-month"></div>
-    </div>
-    <div class="col-xs-2 pie-chart">
-      <h4>Day <small><a id="day">reset</a></small></h4>
-      <div id="chart-ring-day" class="dc-chart"></div>
-    </div>
-    <div class="col-xs-6">
-      <h4>Breweries</h4>
+    <div class = "col-md-6">
+<h4>Locations</h4>
       <div id="map"></div>
     </div>
   </div>
   <div class="row">
-    <div class="col-xs-6 col-md-3">
-      <div class="dc-chart" id="chart-rating-count"></div>
+      <div class="col-xs-6 col-md-6">
+      <div class="dc-chart" id="chart-importance-count"></div>
     </div>
-    <div class="col-xs-6 col-md-3">
-      <div class="dc-chart" id="chart-community-rating-count"></div>
-    </div>
-    <div class="col-xs-6 col-md-3">
-      <div class="dc-chart" id="chart-abv-count"></div>
-    </div>
-    <div class="col-xs-6 col-md-3">
-      <div class="dc-chart" id="chart-ibu-count"></div>
-    </div>
-  </div>
-  <div class="row">
+  <div class = "row">
     <div class="col-xs-12">
       <table class="table table-bordered table-striped" id="data-table">
         <thead>
           <tr class="header">
-            <th>Brewery</th>
-            <th>Beer</th>
-            <th>Style</th>
-            <th>My Rating</th>
-            <th>Community Rating</th>
-            <th>ABV %</th>
-            <th>IBU</th>
+            <th>ID</th>
+            <th>Time</th>
+            <th>Alt</th>
+            <th>Importance</th>
           </tr>
         </thead>
       </table>
+    </div>
+  </div>
+  </div>
+  <div class="row">
+    <div class="col-xs-6 col-md-6">
+      <div class="dc-chart" id="chart-importance-count"></div>
     </div>
   </div>
 </div>
@@ -77,11 +77,16 @@
 <script type="text/javascript" src="js/dc.js"></script>
 <script type="text/javascript" src="js/leaflet.js"></script>
 <script type="text/javascript" src="js/underscore-min.js"></script>
+<script type="text/javascript" src="js/leaflet.markercluster.js"></script>
+<script type="text/javascript" src="js/leaflet.markercluster-src.js"></script>
+
 <script type="text/javascript">
 
 /* instantiate and configure map */
 var map = L.map('map');
-var breweryMarkers = new L.FeatureGroup();
+var pathMarkers = new L.markerClusterGroup();
+// Sinon
+// var pathMarkers = new L.featureGroup();
 
 L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
   id: 'austinlyons.mp2nb11m',
@@ -89,66 +94,55 @@ L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={
   maxZoom: 16
 } ).addTo(map);
 
-
 /* Parse JSON file, create charts, draw markers on map */
-d3.json('untappd.json', function (error, data) {
-  var beerData = data.response.beers.items;
+d3.json('allPoints.geojson', function (error, data) {
+  var pathData = data.features;
 
-  var fullDateFormat = d3.time.format('%a, %d %b %Y %X %Z');
+  var fullDateFormat = d3.time.format('%Y-%m-%dT%H:%M:%SZ');
   var yearFormat = d3.time.format('%Y');
   var monthFormat = d3.time.format('%b');
   var dayOfWeekFormat = d3.time.format('%a');
+  var hourFormat = d3.time.format('%H');
 
   // normalize/parse data so dc can correctly sort & bin them
   // I like to think of each "d" as a row in a spreadsheet
-  _.each(beerData, function(d) {
+  _.each(pathData, function(d) {
     d.count = +d.count;
-    // round to nearest 0.25
-    d.rating_score = Math.round(+d.rating_score * 4) / 4;
-    d.beer.rating_score = Math.round(+d.beer.rating_score *4) / 4;
-    // round to nearest 0.5
-    d.beer.beer_abv = Math.round(+d.beer.beer_abv * 2) / 2;
-    // round to nearest 10
-    d.beer.beer_ibu = Math.floor(+d.beer.beer_ibu / 10) * 10;
-
-    d.first_had_dt = fullDateFormat.parse(d.first_had);
-    d.first_had_year = +yearFormat(d.first_had_dt);
-    d.first_had_month = monthFormat(d.first_had_dt);
-    d.first_had_day = dayOfWeekFormat(d.first_had_dt);
+    d.ID = d.properties.ID
+    d.altitude = Math.round(+d.properties.Alt);
+    d.importance = +d.properties.Importance
+    d.debut = fullDateFormat.parse(d.properties.Time);
+    d.debut_year= +yearFormat(d.debut);
+    d.debut_month = monthFormat(d.debut);
+    d.debut_day = dayOfWeekFormat(d.debut);
+    d.debut_hour = hourFormat(d.debut);
   });
 
   // set crossfilter
-  var ndx = crossfilter(beerData);
+  var ndx = crossfilter(pathData);
 
   // create dimensions (x-axis values)
-  var yearDim  = ndx.dimension(function(d) {return d.first_had_year;}),
-      // dc.pluck: short-hand for same kind of anon. function we used for yearDim
-      monthDim  = ndx.dimension(dc.pluck('first_had_month')),
-      dayOfWeekDim = ndx.dimension(dc.pluck('first_had_day')),
-      ratingDim = ndx.dimension(dc.pluck('rating_score')),
-      commRatingDim = ndx.dimension(function(d) {return d.beer.rating_score;}),
-      abvDim = ndx.dimension(function(d) {return d.beer.beer_abv;}),
-      ibuDim = ndx.dimension(function(d) {return d.beer.beer_ibu;}),
-      allDim = ndx.dimension(function(d) {return d;});
+  var yearDim  = ndx.dimension(function(d) {return d.debut_year;}),
+      monthDim  = ndx.dimension(dc.pluck('debut_month')),
+      dayOfWeekDim = ndx.dimension(dc.pluck('debut_day')),
+      hourDim = ndx.dimension(dc.pluck('debut_hour')),
+      importanceDim = ndx.dimension(dc.pluck('importance')),
+      allDim = ndx.dimension(function(d) {return d.properties;});
 
   // create groups (y-axis values)
   var all = ndx.groupAll();
   var countPerYear = yearDim.group().reduceCount(),
       countPerMonth = monthDim.group().reduceCount(),
       countPerDay = dayOfWeekDim.group().reduceCount(),
-      countPerRating = ratingDim.group().reduceCount(),
-      countPerCommRating = commRatingDim.group().reduceCount(),
-      countPerABV = abvDim.group().reduceCount(),
-      countPerIBU = ibuDim.group().reduceCount();
+      countPerHour = hourDim.group().reduceCount(),
+      countPerImportance = importanceDim.group().reduceCount();
 
   // specify charts
   var yearChart   = dc.pieChart('#chart-ring-year'),
       monthChart   = dc.pieChart('#chart-ring-month'),
       dayChart   = dc.pieChart('#chart-ring-day'),
-      ratingCountChart  = dc.barChart('#chart-rating-count'),
-      commRatingCountChart  = dc.barChart('#chart-community-rating-count'),
-      abvCountChart  = dc.barChart('#chart-abv-count'),
-      ibuCountChart  = dc.barChart('#chart-ibu-count'),
+      hourChart = dc.pieChart('#chart-ring-hour'),
+      importanceCountChart  = dc.barChart('#chart-importance-count'),
       dataCount = dc.dataCount('#data-count')
       dataTable = dc.dataTable('#data-table');
 
@@ -189,59 +183,24 @@ d3.json('untappd.json', function (error, data) {
       }
      );
 
-  ratingCountChart
+  hourChart
+      .width(150)
+      .height(150)
+      .dimension(hourDim)
+      .group(countPerHour)
+      .innerRadius(20);
+
+  importanceCountChart
       .width(300)
       .height(180)
-      .dimension(ratingDim)
-      .group(countPerRating)
-      .x(d3.scale.linear().domain([0,5.2]))
+      .dimension(importanceDim)
+      .group(countPerImportance)
+      .x(d3.scale.linear().domain([0,d3.max(pathData, function (d) { return d.properties.Importance; })]))
       .elasticY(true)
       .centerBar(true)
       .barPadding(5)
-      .xAxisLabel('My rating')
-      .yAxisLabel('Count')
-      .margins({top: 10, right: 20, bottom: 50, left: 50});
-  ratingCountChart.xAxis().tickValues([0, 1, 2, 3, 4, 5]);
-
-  commRatingCountChart
-      .width(300)
-      .height(180)
-      .dimension(commRatingDim)
-      .group(countPerCommRating)
-      .x(d3.scale.linear().domain([0,5.2]))
-      .elasticY(true)
-      .centerBar(true)
-      .barPadding(5)
-      .xAxisLabel('Community rating')
-      .yAxisLabel('Count')
-      .margins({top: 10, right: 20, bottom: 50, left: 50});
-  commRatingCountChart.xAxis().tickValues([0, 1, 2, 3, 4, 5]);
-
-  abvCountChart
-      .width(300)
-      .height(180)
-      .dimension(abvDim)
-      .group(countPerABV)
-      .x(d3.scale.linear().domain([-0.2, d3.max(beerData, function (d) { return d.beer.beer_abv; }) + 0.2]))
-      .elasticY(true)
-      .centerBar(true)
-      .barPadding(2)
-      .xAxisLabel('Alcohol By Volume (%)')
-      .yAxisLabel('Count')
-      .margins({top: 10, right: 20, bottom: 50, left: 50});
-
-  ibuCountChart
-      .width(300)
-      .height(180)
-      .dimension(ibuDim)
-      .group(countPerIBU)
-      .x(d3.scale.linear().domain([-2, d3.max(beerData, function (d) { return d.beer.beer_ibu; }) + 2]))
-      .elasticY(true)
-      .centerBar(true)
-      .barPadding(5)
-      .xAxisLabel('International Bitterness Units')
-      .yAxisLabel('Count')
-      .xUnits(function (d) { return 5;})
+      .xAxisLabel('Importance') //zefzef
+      .yAxisLabel('Count') //zefzefzef
       .margins({top: 10, right: 20, bottom: 50, left: 50});
 
   dataCount
@@ -253,31 +212,26 @@ d3.json('untappd.json', function (error, data) {
     .group(function (d) { return 'dc.js insists on putting a row here so I remove it using JS'; })
     .size(100)
     .columns([
-      function (d) { return d.brewery.brewery_name; },
-      function (d) { return d.beer.beer_name; },
-      function (d) { return d.beer.beer_style; },
-      function (d) { return d.rating_score; },
-      function (d) { return d.beer.rating_score; },
-      function (d) { return d.beer.beer_abv; },
-      function (d) { return d.beer.beer_ibu; }
+      function (d) { return d.properties.ID; },
+      function (d) { return d.properties.Time; },
+      function (d) { return d.properties.Alt;},
+      function (d) { return d.properties.Importance; }
     ])
-    .sortBy(dc.pluck('rating_score'))
+    .sortBy(dc.pluck('ID'))
     .order(d3.descending)
     .on('renderlet', function (table) {
       // each time table is rendered remove nasty extra row dc.js insists on adding
       table.select('tr.dc-table-group').remove();
 
       // update map with breweries to match filtered data
-      breweryMarkers.clearLayers();
+      pathMarkers.clearLayers();
       _.each(allDim.top(Infinity), function (d) {
-        var loc = d.brewery.location;
-        var name = d.brewery.brewery_name;
-        var marker = L.marker([loc.lat, loc.lng]);
-        marker.bindPopup("<p>" + name + " " + loc.brewery_city + " " + loc.brewery_state + "</p>");
-        breweryMarkers.addLayer(marker);
+        var loc = d.geometry.coordinates;
+        var marker = L.circle([loc[1], loc[0]], 100);
+        pathMarkers.addLayer(marker);
       });
-      map.addLayer(breweryMarkers);
-      map.fitBounds(breweryMarkers.getBounds());
+      map.addLayer(pathMarkers);
+      map.fitBounds(pathMarkers.getBounds());
     });
 
   // register handlers
@@ -300,6 +254,12 @@ d3.json('untappd.json', function (error, data) {
     dayChart.filterAll();
     dc.redrawAll();
   });
+
+    d3.selectAll('a#hour').on('click', function () {
+    dayChart.filterAll();
+    dc.redrawAll();
+  });
+
 
   // showtime!
   dc.renderAll();
