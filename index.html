@@ -12,9 +12,10 @@
     <link rel="stylesheet" type="text/css" href="css/MarkerCluster.Default.css">
 </head>
 <body>
+
 <div class="container-fluid">
-    <div class="row">
-    <div class="col-xs-12 dc-data-count dc-chart" id="data-count">
+  <div class="row">
+    <div class="col-md-12 dc-data-count dc-chart" id="data-count">
       <h2>Some moves
         <small>
           <span class="filter-count"></span> selected out of <span class="total-count"></span> records |
@@ -24,29 +25,33 @@
       </h2>
     </div>
   </div>
-  <div class = "row">
-    <div class = "col-md-6" id = "control-row">
-      <div class = "row">
-         <div class = "col-md-6 pie-chart">
-            <h4>Year <small><a id="year">reset</a></small></h4>
-            <div class="dc-chart" id="chart-ring-year"></div>
-         </div>
-          <div class = "col-md-6 pie-chart">
-            <h4>Year <small><a id="month">reset</a></small></h4>
-            <div class="dc-chart" id="chart-month-year"></div>
-         </div>
-      </div>    
+    <div class="row">
+        <div class="col-md-6">
+            <h4>Locations</h4><div id="map"></div>
+        </div>
+        <div class="col-md-6">
+            <div class="row control-row">
+              <div class = "col-md-6 pie-chart">
+                <h4>Year <small><a id="year">reset</a></small></h4>
+                <div class="dc-chart" id="chart-ring-year"></div>
+              </div>
+              <div class = "col-md-6 pie-chart">
+                <h4>Year <small><a id="month">reset</a></small></h4>
+                <div class="dc-chart" id="chart-ring-month"></div>
+              </div>
+              <div class = "col-md-6 pie-chart">
+                <h4>Year <small><a id="day">reset</a></small></h4>
+                <div class="dc-chart" id="chart-ring-day"></div>
+              </div>
+              <div class = "col-md-6 pie-chart">
+                <h4>Year <small><a id="hour">reset</a></small></h4>
+                <div class="dc-chart" id="chart-ring-hour"></div>
+              </div>
 
-
-
-        <div class="row pie-chart"><h4>Day <small><a id="day">reset</a></small></h4><div class="dc-chart" id="chart-ring-day"></div></div>
-        <div class="row pie-chart"><h4>Hour <small><a id="hour">reset</a></small></h4><div class="dc-chart" id="chart-ring-hour"></div></div>
+            </div>
+        </div>
     </div>
-    <div class = "col-md-6">
-<h4>Locations</h4>
-      <div id="map"></div>
-    </div>
-  </div>
+</div>
   <div class="row">
       <div class="col-xs-6 col-md-6">
       <div class="dc-chart" id="chart-importance-count"></div>
