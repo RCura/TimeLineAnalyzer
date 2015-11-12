@@ -102,11 +102,9 @@ var map = L.map('map');
 // Sinon
 
 L.control.layers({
-    'BaseMap': L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
-  id: 'austinlyons.mp2nb11m',
-  accessToken: 'pk.eyJ1IjoiYXVzdGlubHlvbnMiLCJhIjoiOWJhYzFiMTI2MGI1MTFhYWMyYTJmNGFlZGMwMjMyNjgifQ.n2zowhjxnTJmttve5ClAJg',
-  maxZoom: 16
-} ).addTo(map)
+    'BaseMap': L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+  attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>'
+}).addTo(map)
 }, {
     "Markers": markerLayer,
     "Clusters": clusterLayer,
