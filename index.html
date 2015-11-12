@@ -36,15 +36,15 @@
                 <div class="dc-chart" id="chart-ring-year"></div>
               </div>
               <div class = "col-md-6 pie-chart">
-                <h4>Year <small><a id="month">reset</a></small></h4>
+                <h4>Month <small><a id="month">reset</a></small></h4>
                 <div class="dc-chart" id="chart-ring-month"></div>
               </div>
               <div class = "col-md-6 pie-chart">
-                <h4>Year <small><a id="day">reset</a></small></h4>
+                <h4>Day <small><a id="day">reset</a></small></h4>
                 <div class="dc-chart" id="chart-ring-day"></div>
               </div>
               <div class = "col-md-6 pie-chart">
-                <h4>Year <small><a id="hour">reset</a></small></h4>
+                <h4>Hour <small><a id="hour">reset</a></small></h4>
                 <div class="dc-chart" id="chart-ring-hour"></div>
               </div>
 
@@ -53,8 +53,9 @@
     </div>
 </div>
   <div class="row">
-      <div class="col-xs-6 col-md-6">
+      <div class="col-md-3 col-md-offset-7">
       <div class="dc-chart" id="chart-importance-count"></div>
+    </div>
     </div>
   <div class = "row">
     <div class="col-xs-12">
@@ -71,11 +72,6 @@
     </div>
   </div>
   </div>
-  <div class="row">
-    <div class="col-xs-6 col-md-6">
-      <div class="dc-chart" id="chart-importance-count"></div>
-    </div>
-  </div>
 </div>
 <script type="text/javascript" src="js/d3.js"></script>
 <script type="text/javascript" src="js/crossfilter.js"></script>
@@ -88,20 +84,27 @@
 
 <script type="text/javascript">
 
+var markerLayer = new L.featureGroup();
+var clusterLayer = new L.markerClusterGroup();
+var heatLayer = new L.heatLayer([]);
 /* instantiate and configure map */
 var map = L.map('map');
-var pathMarkers = new L.markerClusterGroup();
-// var pathMarkers = new L.featureGroup();
-//var pathMarkers = new L.heatLayer();
-var heatMarkers = new L.heatLayer();
+
 // Sinon
 
-
-L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+L.control.layers({
+    'BaseMap': L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
   id: 'austinlyons.mp2nb11m',
   accessToken: 'pk.eyJ1IjoiYXVzdGlubHlvbnMiLCJhIjoiOWJhYzFiMTI2MGI1MTFhYWMyYTJmNGFlZGMwMjMyNjgifQ.n2zowhjxnTJmttve5ClAJg',
   maxZoom: 16
-} ).addTo(map);
+} ).addTo(map)
+}, {
+    "Markers": markerLayer,
+    "Clusters": clusterLayer,
+    "Heatmap": heatLayer.addTo(map)
+}).addTo(map);
+
+
 
 /* Parse JSON file, create charts, draw markers on map */
 d3.json('allPoints.geojson', function (error, data) {
@@ -232,21 +235,18 @@ d3.json('allPoints.geojson', function (error, data) {
     .on('renderlet', function (table) {
       // each time table is rendered remove nasty extra row dc.js insists on adding
       table.select('tr.dc-table-group').remove();
-
-      // update map with breweries to match filtered data
       var myPoints = [];
-      pathMarkers.clearLayers();
+      clusterLayer.clearLayers();
+      markerLayer.clearLayers();
       _.each(allDim.top(Infinity), function (d) {
         var loc = d.geometry.coordinates;
-        var marker = L.circle([loc[1], loc[0]], 100);
-        pathMarkers.addLayer(marker);
+        var marker = L.circleMarker([loc[1], loc[0]], {radius: 5});
+        clusterLayer.addLayer(marker);
+        markerLayer.addLayer(marker);
         myPoints.push([loc[1], loc[0]]);
       });
-      var heat = L.heatLayer(myPoints).addTo(map);
-      //map.addLayer(pathMarkers);
-
-
-      map.fitBounds(pathMarkers.getBounds());
+      heatLayer.setLatLngs(myPoints);
+      map.fitBounds(clusterLayer.getBounds());
     });
 
   // register handlers
